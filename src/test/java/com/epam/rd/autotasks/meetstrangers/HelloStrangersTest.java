@@ -1,20 +1,106 @@
 package com.epam.rd.autotasks.meetstrangers;
 
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.NoSuchElementException;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
-
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class HelloStrangersTest {
 
+    @Nested
+    @DisplayName("Tests for illegal input(0, -1, null)")
+    class illegalInput {
+        @Test
+        @Order(1)
+        @DisplayName("Test for zero input")
+        public void zeroInputTest() {
+            final String namesCount = "0";
+            final ByteArrayInputStream byteIn = new ByteArrayInputStream(namesCount.getBytes());
+            BufferedInputStream controlledIn = new BufferedInputStream(byteIn);
+            InputStream defaultIn = System.in;
+
+            System.setIn(controlledIn);
+
+            try {
+                NoSuchElementException thrown = assertThrows( //maybe runtimeEx ?
+                        NoSuchElementException.class,
+                        ()-> HelloStrangers.main(new String[]{}),
+                        "The program should not greet anyone because the number of strangers is zero"
+                );
+                assertTrue(thrown.getMessage().contains("No line found"));
+            }
+            finally {
+                System.setIn(defaultIn);
+            }
+        }
+        @Test
+        @Order(2)
+        @DisplayName("Test for negative input")
+        public void negInputTest() {
+            final String namesCount = "-1";
+            final ByteArrayInputStream byteIn = new ByteArrayInputStream(namesCount.getBytes());
+            BufferedInputStream controlledIn = new BufferedInputStream(byteIn);
+            InputStream defaultIn = System.in;
+
+            System.setIn(controlledIn);
+            try {
+                NegativeArraySizeException thrown = assertThrows( //maybe runtimeEx ?
+                        NegativeArraySizeException.class,
+                        ()-> HelloStrangers.main(new String[]{}),
+                        "The program should not work because the strangers count is negative"
+                );
+                assertTrue(thrown.getMessage().contains("-1"));
+            }  finally {
+                System.setIn(defaultIn);
+            }
+        }
+        @Test
+        @Order(3)
+        @DisplayName("Test for null input")
+        public void nullInputTest() {
+            BufferedInputStream controlledIn = new BufferedInputStream(null);
+            InputStream defaultIn = System.in;
+
+            System.setIn(controlledIn);
+            try {
+                assertThrows( //maybe runtimeEx ?
+                        NoSuchElementException.class,
+                        ()-> HelloStrangers.main(new String[]{}),
+                        "The program should not work because the strangers count is null"
+                );
+            }  finally {
+                System.setIn(defaultIn);
+            }
+        }
+    }
+    @Test
+    @Order(4)
+    @DisplayName("Test on single word name")
+    public void singleWordNameTest() {
+        ArrayList<String> list = new ArrayList<>();
+        list.add("Angus");
+        anyNamesTest(list);
+    }
+    @Test
+    @Order(5)
+    @DisplayName("Test on multiple words name")
+    public void multipleWordsNameTest() {
+        ArrayList<String> list = new ArrayList<>();
+        list.add("Agent Smith");
+        anyNamesTest(list);
+    }
     @ParameterizedTest
+    @Order(6)
+    @DisplayName("Test on random input names")
     @MethodSource("randomNames")
-    public void test(ArrayList<String> namesList) {
+    public void anyNamesTest(ArrayList<String> namesList) {
 
         //compound name strings to one input string by format:
         // "{namesCount}\lineSep{nameOne}\lineSep...{nameN}\lineSep"
@@ -83,7 +169,7 @@ public class HelloStrangersTest {
                 filler(names)
         );
     }
-    static ArrayList<String> filler(String[] names){
+    static ArrayList<String> filler(String[] names) {
         ArrayList<String> list = new ArrayList<>();
         for (int i = 0; i <= (int)(Math.random()*100)%10; i++){
             list.add(names[(int)(Math.random()*100)%names.length]);
