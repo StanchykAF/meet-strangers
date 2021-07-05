@@ -72,8 +72,8 @@ public class HelloStrangersTest {
 
                 final String actual = sink.toString().trim();
                 String[] temp = actual.split(System.lineSeparator());
-                assertEquals("Seriously? Why you so negative?", temp[temp.length-1],
-                        "Your program must print \"Seriously? Why you so negative?\" but printed \""
+                assertEquals("Seriously? Why so negative?", temp[temp.length-1],
+                        "Your program must print \"Seriously? Why so negative?\" but printed \""
                                 + temp[temp.length-1] + "\" instead.");
             } catch (IOException e) {
                 e.printStackTrace();
