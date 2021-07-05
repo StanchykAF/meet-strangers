@@ -6,7 +6,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.NoSuchElementException;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -15,8 +14,8 @@ import static org.junit.jupiter.api.Assertions.*;
 public class HelloStrangersTest {
 
     @Nested
-    @DisplayName("Tests for illegal input(0, -1, null)")
-    class illegalInput {
+    @DisplayName("Tests for illegal input(0, -1)")
+    class IllegalInput {
         @Test
         @Order(1)
         @DisplayName("Test for zero input")
@@ -28,16 +27,27 @@ public class HelloStrangersTest {
 
             System.setIn(controlledIn);
 
+            final ByteArrayOutputStream sink = new ByteArrayOutputStream();
+            PrintStream controlledOut = new PrintStream(sink);
+            PrintStream defaultOut = System.out;
+
+            System.setOut(controlledOut);
+
             try {
-                NoSuchElementException thrown = assertThrows( //maybe runtimeEx ?
-                        NoSuchElementException.class,
-                        ()-> HelloStrangers.main(new String[]{}),
-                        "The program should not greet anyone because the number of strangers is zero"
-                );
-                assertTrue(thrown.getMessage().contains("No line found"));
+                HelloStrangers.main(new String[]{});
+                controlledOut.flush();
+
+                final String actual = sink.toString().trim();
+                String[] temp = actual.split(System.lineSeparator());
+                assertEquals("Oh, it looks like there is no one here", temp[temp.length-1],
+                        "Your program must print \"Oh, it looks like there is no one here\" but printed \""
+                                + temp[temp.length-1] + "\" instead.");
+            } catch (IOException e) {
+                e.printStackTrace();
             }
             finally {
                 System.setIn(defaultIn);
+                System.setOut(defaultOut);
             }
         }
         @Test
@@ -50,38 +60,32 @@ public class HelloStrangersTest {
             InputStream defaultIn = System.in;
 
             System.setIn(controlledIn);
-            try {
-                NegativeArraySizeException thrown = assertThrows( //maybe runtimeEx ?
-                        NegativeArraySizeException.class,
-                        ()-> HelloStrangers.main(new String[]{}),
-                        "The program should not work because the strangers count is negative"
-                );
-                assertTrue(thrown.getMessage().contains("-1"));
-            }  finally {
-                System.setIn(defaultIn);
-            }
-        }
-        @Test
-        @Order(3)
-        @DisplayName("Test for null input")
-        public void nullInputTest() {
-            BufferedInputStream controlledIn = new BufferedInputStream(null);
-            InputStream defaultIn = System.in;
+            final ByteArrayOutputStream sink = new ByteArrayOutputStream();
+            PrintStream controlledOut = new PrintStream(sink);
+            PrintStream defaultOut = System.out;
 
-            System.setIn(controlledIn);
+            System.setOut(controlledOut);
+
             try {
-                assertThrows( //maybe runtimeEx ?
-                        NoSuchElementException.class,
-                        ()-> HelloStrangers.main(new String[]{}),
-                        "The program should not work because the strangers count is null"
-                );
-            }  finally {
+                HelloStrangers.main(new String[]{});
+                controlledOut.flush();
+
+                final String actual = sink.toString().trim();
+                String[] temp = actual.split(System.lineSeparator());
+                assertEquals("Seriously? Why you so negative?", temp[temp.length-1],
+                        "Your program must print \"Seriously? Why you so negative?\" but printed \""
+                                + temp[temp.length-1] + "\" instead.");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            finally {
                 System.setIn(defaultIn);
+                System.setOut(defaultOut);
             }
         }
     }
     @Test
-    @Order(4)
+    @Order(3)
     @DisplayName("Test on single word name")
     public void singleWordNameTest() {
         ArrayList<String> list = new ArrayList<>();
@@ -89,7 +93,7 @@ public class HelloStrangersTest {
         anyNamesTest(list);
     }
     @Test
-    @Order(5)
+    @Order(4)
     @DisplayName("Test on multiple words name")
     public void multipleWordsNameTest() {
         ArrayList<String> list = new ArrayList<>();
@@ -97,7 +101,7 @@ public class HelloStrangersTest {
         anyNamesTest(list);
     }
     @ParameterizedTest
-    @Order(6)
+    @Order(5)
     @DisplayName("Test on random input names")
     @MethodSource("randomNames")
     public void anyNamesTest(ArrayList<String> namesList) {
