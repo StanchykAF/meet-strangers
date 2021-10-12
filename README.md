@@ -18,3 +18,45 @@ It is guaranteed that the input of strangers count is int number.
 Consider special cases: 
 - If strangers count is zero, then program must print "Oh, it looks like there is no one here".
 - If strangers count is negative, then program must print "Seriously? Why so negative?".
+
+### Examples
+
+---
+Input: 
+```
+3
+Athos
+Porthos
+Aramis
+```
+
+Output:
+```
+Hello, Athos
+Hello, Porthos
+Hello, Aramis
+```
+
+---
+Input:
+```
+0
+```
+
+Output:
+```
+Oh, it looks like there is no one here
+```
+
+---
+Input:
+```
+-3
+```
+
+Output:
+```
+Seriously? Why so negative?
+```
+
+---
