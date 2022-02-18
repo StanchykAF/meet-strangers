@@ -19,6 +19,8 @@ Consider special cases:
 - If strangers count is zero, then program must print "Oh, it looks like there is no one here".
 - If strangers count is negative, then program must print "Seriously? Why so negative?".
 
+*Hint*: In case you use the Scanner class, it might be helpful sure to check strings it reads be non-empty.
+
 ### Examples
 
 ---

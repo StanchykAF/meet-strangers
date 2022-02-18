@@ -6,159 +6,66 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.github.stefanbirkner.systemlambda.SystemLambda.tapSystemOutNormalized;
+import static com.github.stefanbirkner.systemlambda.SystemLambda.withTextFromSystemIn;
 import static org.junit.jupiter.api.Assertions.*;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class HelloStrangersTest {
 
-    @Nested
-    @DisplayName("Tests for illegal input(0, -1)")
-    class IllegalInput {
-        @Test
-        @Order(1)
-        @DisplayName("Test for zero input")
-        public void zeroInputTest() {
-            final String namesCount = "0";
-            final ByteArrayInputStream byteIn = new ByteArrayInputStream(namesCount.getBytes());
-            BufferedInputStream controlledIn = new BufferedInputStream(byteIn);
-            InputStream defaultIn = System.in;
-
-            System.setIn(controlledIn);
-
-            final ByteArrayOutputStream sink = new ByteArrayOutputStream();
-            PrintStream controlledOut = new PrintStream(sink);
-            PrintStream defaultOut = System.out;
-
-            System.setOut(controlledOut);
-
-            try {
-                HelloStrangers.main(new String[]{});
-                controlledOut.flush();
-
-                final String actual = sink.toString().trim();
-                String[] temp = actual.split(System.lineSeparator());
-                assertEquals("Oh, it looks like there is no one here", temp[temp.length-1],
-                        "Your program must print \"Oh, it looks like there is no one here\" but printed \""
-                                + temp[temp.length-1] + "\" instead.");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            finally {
-                System.setIn(defaultIn);
-                System.setOut(defaultOut);
-            }
-        }
-        @Test
-        @Order(2)
-        @DisplayName("Test for negative input")
-        public void negInputTest() {
-            final String namesCount = "-1";
-            final ByteArrayInputStream byteIn = new ByteArrayInputStream(namesCount.getBytes());
-            BufferedInputStream controlledIn = new BufferedInputStream(byteIn);
-            InputStream defaultIn = System.in;
-
-            System.setIn(controlledIn);
-            final ByteArrayOutputStream sink = new ByteArrayOutputStream();
-            PrintStream controlledOut = new PrintStream(sink);
-            PrintStream defaultOut = System.out;
-
-            System.setOut(controlledOut);
-
-            try {
-                HelloStrangers.main(new String[]{});
-                controlledOut.flush();
-
-                final String actual = sink.toString().trim();
-                String[] temp = actual.split(System.lineSeparator());
-                assertEquals("Seriously? Why so negative?", temp[temp.length-1],
-                        "Your program must print \"Seriously? Why so negative?\" but printed \""
-                                + temp[temp.length-1] + "\" instead.");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            finally {
-                System.setIn(defaultIn);
-                System.setOut(defaultOut);
-            }
-        }
+    private String runMain(String... lines) throws Exception {
+        return tapSystemOutNormalized(() ->
+                withTextFromSystemIn(lines)
+                        .execute(() -> HelloStrangers.main(new String[]{})))
+                .strip();
     }
+
     @Test
-    @Order(3)
-    @DisplayName("Test on single word name")
-    public void singleWordNameTest() {
-        ArrayList<String> list = new ArrayList<>();
-        list.add("Angus");
-        anyNamesTest(list);
+    @DisplayName("Test for zero input")
+    void zeroInputTest() throws Exception {
+        String actual = runMain("0");
+        assertEquals("Oh, it looks like there is no one here", actual);
     }
+
     @Test
-    @Order(4)
-    @DisplayName("Test on multiple words name")
-    public void multipleWordsNameTest() {
-        ArrayList<String> list = new ArrayList<>();
-        list.add("Agent Smith");
-        anyNamesTest(list);
+    @DisplayName("Test for negative input")
+    void negInputTest() throws Exception {
+        String actual = runMain("-1").strip();
+        assertEquals("Seriously? Why so negative?", actual);
     }
+
     @ParameterizedTest
-    @Order(5)
-    @DisplayName("Test on random input names")
-    @MethodSource("randomNames")
-    public void anyNamesTest(ArrayList<String> namesList) {
+    @DisplayName("Test for regular and random cases")
+    @MethodSource({"regularCases", "randomNames"})
+    void anyNamesTest(List<String> namesList) throws Exception {
 
-        //compound name strings to one input string by format:
-        // "{namesCount}\lineSep{nameOne}\lineSep...{nameN}\lineSep"
-        //e.g.:2\nJohn\nDave\n
-        final int namesCount = namesList.size();
-        StringBuilder sb = new StringBuilder();
-        sb.append(namesList.size()).append(System.lineSeparator());
-        for (String s : namesList) {
-            sb.append(s).append(System.lineSeparator());
-        }
-        String names = sb.toString();
+        String expected = namesList.stream()
+                .map(name -> "Hello, " + name)
+                .collect(Collectors.joining("\n"));
 
-        final ByteArrayInputStream byteIn = new ByteArrayInputStream(names.getBytes());
-        BufferedInputStream controlledIn = new BufferedInputStream(byteIn);
-        InputStream defaultIn = System.in;
+        String[] inputLines = Stream.concat(
+                        Stream.of(Integer.toString(namesList.size())),
+                        namesList.stream())
+                .toArray(String[]::new);
 
-        System.setIn(controlledIn);
+        String actual = runMain(inputLines).strip();
 
-        final ByteArrayOutputStream sink = new ByteArrayOutputStream();
-        PrintStream controlledOut = new PrintStream(sink);
-        PrintStream defaultOut = System.out;
-
-        System.setOut(controlledOut);
-
-        try {
-            HelloStrangers.main(new String[]{});
-            controlledOut.flush();
-
-            final String actual = sink.toString().trim();
-            String[] temp = actual.split(System.lineSeparator());
-            sb = new StringBuilder();
-            for (int i = temp.length-namesCount; i < temp.length; i++){
-                sb.append(temp[i]).append(System.lineSeparator());
-            }
-            String outHellos = sb.toString();
-
-            temp = names.split(System.lineSeparator());
-            sb = new StringBuilder();
-            for (int i = 1; i < temp.length; i++){ //first el is name count
-                sb.append("Hello, ").append(temp[i]).append(System.lineSeparator());
-            }
-            String chekHellos = sb.toString();
-
-            assertEquals(chekHellos, outHellos, "Your program must print (e.g): \"" +
-                    chekHellos + "\" but printed \"" + outHellos + "\" instead. " +
-                    "(Make sure that program prints \" Hello, ...\" in the end of output)");
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            System.setOut(defaultOut);
-            System.setIn(defaultIn);
-        }
+        assertEquals(expected, actual);
     }
-    static Stream<ArrayList<String>> randomNames() {
+
+    static Stream<List<String>> regularCases() {
+        return Stream.of(
+                List.of("Angus"),
+                List.of("Agent Smith"),
+                List.of("Kiefer William Frederick Dempsey George Rufus Sutherland")
+        );
+    }
+
+    static Stream<List<String>> randomNames() {
         String[] names = {
                 "John", "Dave", "Martin",
                 "Jimmy", "Robert", "Paul",
@@ -170,13 +77,16 @@ public class HelloStrangersTest {
         return Stream.of(
                 filler(names),
                 filler(names),
+                filler(names),
+                filler(names),
                 filler(names)
         );
     }
+
     static ArrayList<String> filler(String[] names) {
         ArrayList<String> list = new ArrayList<>();
-        for (int i = 0; i <= (int)(Math.random()*100)%10; i++){
-            list.add(names[(int)(Math.random()*100)%names.length]);
+        for (int i = 0; i <= (int) (Math.random() * 100) % 10; i++) {
+            list.add(names[(int) (Math.random() * 100) % names.length]);
         }
         return list;
     }
